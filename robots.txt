@@ -1,0 +1,14 @@
+# robots.txt https://inkss.cn
+User-agent: sogou spider
+Disallow: /
+User-agent: YodaoBot
+Disallow: /
+User-agent: *
+Disallow: 
+Disallow: /icon
+Disallow: /js
+Disallow: /css
+Disallow: /img
+Disallow: /fonts
+Disallow: /pagination
+Sitemap: http://inkss.cn/sitemap.xml
