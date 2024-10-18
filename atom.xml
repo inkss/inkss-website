@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>枋柚梓的猫会发光</title>
+  <icon>https://inkss.cn/icon/android-chrome-192x192.png</icon>
+  <subtitle>猫和它的小小窝</subtitle>
+  <link href="https://inkss.cn/atom.xml" rel="self"/>
+  
+  <link href="https://inkss.cn/"/>
+  <updated>2024-07-25T04:09:00.000Z</updated>
+  <id>https://inkss.cn/</id>
+  
+  <author>
+    <name>枋柚梓</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>CDN 流量又被刷了</title>
+    <link href="https://inkss.cn/post/70023975/"/>
+    <id>https://inkss.cn/post/70023975/</id>
+    <published>2024-07-24T10:10:00.000Z</published>
+    <updated>2024-07-25T04:09:00.000Z</updated>
+    
+    <content type="html"><![CDATA[<p><img src="../../img/article/24-07@%E5%8F%88%E8%A2%AB%E5%88%B7%E6%B5%81%E9%87%8F%E4%BA%86/Hexo%E5%8D%9A%E5%AE%A2%E5%B0%81%E9%9D%A2.png" alt="CDN 流量又被刷了"></p><p>更正：按照目前了解到的信息，本次流量被刷大抵不是攻击事件，而是源自 PCDN 用户流量对齐的刷流行为：<em>自 2024 年 3 月至今，中国境内有大量各类网站，在每天晚上固定时间，受到 IP 来自<strong>山西联通</strong>、<strong>江苏联通</strong>、<strong>安徽联通</strong>等地的固定网段的恶意流量攻击。<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>。</em></p><p><mark>刷 PCDN 的真是人间之屑啊 <svg class="iconfont emoji" aria-hidden="true"><use xlink:href="#icon-bianbian"></use></svg> 。</mark></p><h2 id="缘由">缘由</h2><p>实在是太大意了，一个不太常用的域名，在 CDN 域名配置里只设置了用量封顶，没有配置访问限频和下行限速。但用量封顶又有个缓存，不能即时生效，导致在封顶生效关闭域名前的这段时间内里任人宰割。另一方面，由于嫌弃腾讯云推广短信打扰，把所有短信通知关了，进而阙值被触发时的通知短信也没有。</p><details cyan><summary> CDN 统计信息 </summary>              <div class='content'>              <div class="img-wrap"><div class="img-bg"><img class="img" src="../../img/article/24-07@又被刷流量了/24-07-24_174024.png" alt="总访问用户区域分布量"/></div><span class="image-caption">总访问用户区域分布量</span></div><div class="img-wrap"><div class="img-bg"><img class="img" src="../../img/article/24-07@又被刷流量了/24-07-24_175011.png" alt="流量"/></div><span class="image-caption">流量</span></div><div class="img-wrap"><div class="img-bg"><img class="img" src="../../img/article/24-07@又被刷流量了/24-07-24_174924.png" alt="TOP 100 客户端IP"/></div><span class="image-caption">TOP 100 客户端IP</span></div>              </div>            </details><p>从 21:40 开始，到 22:05 封顶结束，7.62w 次请求，对一个仅仅 400K 的图片刷出了 18.19GB 流量，真是混蛋啊，它只是一个图片文件啊啊啊，完全无法理解对方意图何在。</p><h2 id="改进">改进</h2><p>痛定思痛，粗放式的域名配置隐患太大了，此前因为加速域名太多没有细致配置，每个域名的设置各不相同。这次翻下腾讯云 API，照例写个 Node 脚本，进行批量修改。</p><p>统一标准：</p><ul><li>共用 IP 黑名单/ UA 黑名单；</li><li>IP 访问限频：30QPS；</li><li>下行限速配置：5120kb/s；</li><li>用量封顶：5GB、24 小时、关闭 CDN。</li></ul><p>项目地址：</p><div class="tag link"><a class="link-card" title="inkss/t-cdn-update" href="https://github.com/inkss/t-cdn-update"><div class="left"><img src="/img/default/chrome.png"/></div><div class="right"><p class="text">inkss/t-cdn-update</p><p class="url">https://github.com/inkss/t-cdn-update</p></div></a></div><h2 id="列表">列表</h2><h3 id="IP-黑名单列表-swig￼3">IP 黑名单列表 <svg class="iconfont emoji" aria-hidden="true"><use xlink:href="#icon-fennu"></use></svg></h3><table><thead><tr><th>IP</th><th>地址</th><th>运营商</th><th>损失流量</th><th>攻击时间</th></tr></thead><tbody><tr><td>60.221.195.20&amp;163</td><td>中国 山西省 临汾市</td><td>中国联通</td><td>18.19GB</td><td>2024/07/22</td></tr><tr><td>60.220.182.16</td><td>中国 山西省 长治市</td><td>中国联通</td><td>4.36GB</td><td>2024/07/24</td></tr></tbody></table><h3 id="UA-黑名单列表">UA 黑名单列表</h3><ul><li><code>*nmap*|*NMAP*|*HTTrack*|*sqlmap*|*Java*|*zgrab*</code></li><li><code>*Python*|*python*|*curl*|*Curl*|*wget|*Wget*</code></li><li><code>*MJ12bot*|*a Palo Alto*|*ltx71*|*censys*|*AhrefsBot*</code></li><li><code>*Go-http-client*|*CensysInspect*|*toutiao*|*Barkrowler*</code></li></ul><h3 id="激进列表">激进列表</h3><p><a href="https://github.com/unclemcz/ban-pcdn-ip?ref=taifua.com">unclemcz/ban-pcdn-ip (github.com)</a><sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup></p><hr class="footnotes-sep"><section class="footnotes"><ol class="footnotes-list"><li id="fn1" class="footnote-item"><p>这类流量攻击时间规律，每天 19:50 左右开始，23:00 准时结束。<br><img src="../../img/article/24-07@%E5%8F%88%E8%A2%AB%E5%88%B7%E6%B5%81%E9%87%8F%E4%BA%86/24-07-25_120737.png" alt="每天 19:50 左右开始刷流量"> <a href="#fnref1" class="footnote-backref">↩︎</a></p></li><li id="fn2" class="footnote-item"><p>收集地区为山西、运营商为联通的 PCDN 恶意刷量 IP 段清单。 <a href="#fnref2" class="footnote-backref">↩︎</a></p></li></ol></section>]]></content>
+    
+    
+    <summary type="html">怎么能有那么蛋疼的人，动不动就刷人流量啊。</summary>
+    
+    
+    
+    <category term="杂谈" scheme="https://inkss.cn/categories/%E6%9D%82%E8%B0%88/"/>
+    
+    
+    <category term="CDN" scheme="https://inkss.cn/tags/CDN/"/>
+    
+    <category term="腾讯云" scheme="https://inkss.cn/tags/%E8%85%BE%E8%AE%AF%E4%BA%91/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>极空间获取 SSH 权限</title>
+    <link href="https://inkss.cn/post/ed9642cd/"/>
+    <id>https://inkss.cn/post/ed9642cd/</id>
+    <published>2024-03-29T13:50:00.000Z</published>
+    <updated>2024-03-29T13:50:00.000Z</updated>
+    
+    <content type="html"><![CDATA[<p class='p center logo large'>极空间获取 SSH 权限</p><h2 id="SSH-获取">SSH 获取</h2><p>一句话概括版本：<strong>利用 PE 系统挂载极空间硬件，给极空间塞一个新用户/公钥</strong>。</p><p>可以参考下面视频完成操作，视频中前半段着墨于 Ubuntu 镜像的制作<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>，在制作完后就是关闭极空间，插 U 盘开机启动<sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup>。在修改文件方面，UP 主采用了修改 <code>/etc/shadow</code>, <code>/etc/passwd</code> 文件的方法，手动添加了一个已知密码的新用户。除此之外，还可以采用对 root 用户添加公钥的方式 <code>/root/.ssh/authorized_keys</code>，两种方法都可行，具体取决于个人喜好。</p><div class="tag link"><a class="link-card" title="极空间最新获取SSH权限教程终极版" href="https://www.bilibili.com/video/BV1SF4m1u7j2/"><div class="left"><img src="/img/default/chrome.png"/></div><div class="right"><p class="text">极空间最新获取SSH权限教程终极版</p><p class="url">https://www.bilibili.com/video/BV1SF4m1u7j2/</p></div></a></div><p>完成修改并重启后，不出意外，您就可以在终端下登录系统了。</p><h2 id="SSH-维护">SSH 维护</h2><p>一般情形下，极空间系统更新时会重置关键目录，无论是后加的新用户还是公钥文件均会被清空，导致失去 SSH 访问权，这里提供一个相对讨巧的方案。</p><p>首先，将极空间应用目录软链接到你的存储区：</p><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">ln</span> -s /zspace/applications/services /tmp/zfsv3/nvme12/XXXXXXXXXXX/data/应用程序/System-<span class="built_in">link</span>/</span><br></pre></td></tr></table></figure><ul><li><em>/zspace/applications/services</em>：该目录为极空间应用所在目录；</li><li><em>/tmp/zfsv3/nvme12/…</em>：该目录为<strong>个人硬盘</strong>的实际挂载目录，可利用<code>df</code>命令查找挂载地址；</li></ul><p>软链的目录在极空间 APP 查看会提示<strong>没有权限</strong>，但可以利用 SMB 查看到这些文件。接着我们只需要随便找一个能被极空间调用的 Shell 脚本，在脚本中追加一些私货，就能搭个顺风车利用极空间实现我们的目标啦，这里推荐修改 SMB 的启动脚本：</p><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">/zspace/applications/services/samba/start.sh</span><br></pre></td></tr></table></figure><p>在该文件中追加导入公钥的命令：</p><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> /root/.ssh</span><br><span class="line"><span class="built_in">touch</span> /root/.ssh/authorized_keys</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;你的公钥&#x27;</span> &gt; /root/.ssh/authorized_keys</span><br><span class="line"><span class="built_in">chmod</span> 700 /root/.ssh</span><br><span class="line"><span class="built_in">chmod</span> 600 /root/.ssh/authorized_keys</span><br></pre></td></tr></table></figure><p><img src="../../img/article/24-03@%E6%9E%81%E7%A9%BA%E9%97%B4%E8%8E%B7%E5%8F%96SSH%E6%9D%83%E9%99%90/24-03-29_214943.png" alt="追加私货"></p><p>最后在极空间<strong>设置</strong> - <strong>文件及共享服务</strong> 开关一次 Samba 服务就搞定啦~</p><p><img src="../../img/article/24-03@%E6%9E%81%E7%A9%BA%E9%97%B4%E8%8E%B7%E5%8F%96SSH%E6%9D%83%E9%99%90/nas.inkss.cn_home_.png" alt="开关服务"></p><hr class="footnotes-sep"><section class="footnotes"><ol class="footnotes-list"><li id="fn1" class="footnote-item"><p>个人更推荐给 U 盘刷 Ventoy，把 Ubuntu 镜像放到 U 盘根目录。 <a href="#fnref1" class="footnote-backref">↩︎</a></p></li><li id="fn2" class="footnote-item"><p>我这里默认就是 U 盘优先启动，如果没进 PE 按照视频提示进 BIOS 修改。 <a href="#fnref2" class="footnote-backref">↩︎</a></p></li></ol></section>]]></content>
+    
+    
+    <summary type="html">这篇文章记录了在极空间系统不提供 SSH 的情况下，如何通过利用 PE 系统挂载极空间硬件设备，修改 ZOS 系统以实现使用 SSH 的目的。同时，还记录了当系统更新后权限失效时的处理方案。</summary>
+    
+    
+    
+    <category term="教程" scheme="https://inkss.cn/categories/%E6%95%99%E7%A8%8B/"/>
+    
+    
+    <category term="NAS" scheme="https://inkss.cn/tags/NAS/"/>
+    
+    <category term="极空间" scheme="https://inkss.cn/tags/%E6%9E%81%E7%A9%BA%E9%97%B4/"/>
+    
+    <category term="SSH" scheme="https://inkss.cn/tags/SSH/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>基于爱快路由的 IPV6 网络防火墙设置</title>
+    <link href="https://inkss.cn/post/8fe38c87/"/>
+    <id>https://inkss.cn/post/8fe38c87/</id>
+    <published>2023-11-07T09:20:00.000Z</published>
+    <updated>2024-04-15T04:55:00.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>本文介绍了如何在爱快路由设备上配置 IPV6 网络防火墙，我们设置该防火墙的主要原因有以下几点：</p><ul><li>内网设备需要访问纯 IPV6 资源，例如观看 IPTV；</li><li>某些内网设备缺乏防火墙保护，如果这些设备暴露在外网，将面临严重的安全风险。</li><li>事实上只有部分内网设备需要外网访问权限，例如 NAS 和虚拟机，其他设备并不需要被外网访问。</li><li>为了方便使用，在内网部署了 DDNS，将动态 IP 地址绑定到易于记忆的域名，这也存在外泄的潜在风险。</li></ul><p>我们将从两个角度完成内网 IPV6 防火墙的设定：</p><ul><li>只给<mark>指定设备</mark>分发公网 IPV6 地址；</li><li>只开放指定地址和<mark>指定端口</mark>的访问权限；</li></ul><h2 id="IPV6-地址获取">IPV6 地址获取</h2><p>ipv6地址获取有两种方式：路由器通告前缀 + 设备自己的后缀<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>；DHCP 给一个 /128 的地址。</p><p>需要明确：无状态和有状态，仅仅指的是 IPV6 地址的获取方式。前者实现方式是 SLAAC，后者是 DHCPv6，由于 SLAAC 只能获取到地址，无法获取到 DNS 等信息，亦存在一种组合搭配，所有方式如下：</p><table><thead><tr><th>方式</th><th>地址</th><th>前缀</th><th>网关</th><th>DNS</th><th>A</th><th>M</th><th>O</th></tr></thead><tbody><tr><td>SLAAC（无状态）</td><td>RA</td><td>RA</td><td>RA</td><td>-</td><td>1</td><td>0</td><td>0</td></tr><tr><td>Stateless DHCPv6（无状态 DHCPv6）</td><td>RA</td><td>RA</td><td>RA</td><td>DHCPv6</td><td>1</td><td>0</td><td>1</td></tr><tr><td>Stateful DHCPv6（有状态 DHCPv6）</td><td>DHCPv6</td><td>DHCPv6</td><td>RA</td><td>DHCPv6</td><td>0</td><td>1</td><td>~</td></tr><tr><td>有状态 + 无状态</td><td></td><td></td><td></td><td></td><td>1</td><td>1</td><td>1</td></tr></tbody></table><p>原则上，出于易于管理的角度，我们推崇使用<strong>有状态 DHCPv6</strong>。在这种方式下，所有信息由路由器统一下发管理。然而，谷歌曾明确表示，安卓设备将只支持 <strong>SLAAC</strong> 的 IPv6 地址获取方式<sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup>，因此，在有状态或者无状态的选取上根据个人需求而定<sup class="footnote-ref"><a href="#fn3" id="fnref3">[3]</a></sup>。</p><p>对于<strong>爱快系统</strong>，有状态可与 <em>DHCPv6 黑白名单</em> 搭配使用，以便完成对指定设备（依据 MAC 地址）的 IPv6 地址分配。而无状态则通过设置 <em>RA 通告绑定</em>，与 <em>前缀静态分配</em> 搭配使用，实现对指定设备的地址分配，在前缀静态分配中填写本地链接 IPV6 地址（形如 <code>fe80::8a35:2de7:e6f3:7582</code>）。</p><h2 id="ACL-规则">ACL 规则</h2><p>一些基本知识：</p><ul><li>允许的优先级大于阻断的优先级；</li><li>方向中的转发/进所描述的对象为路由器，进指内网/外网访问路由，一般只需要使用转发；</li><li>连接方向匹配中原始方向为发起方发起访问的报文，可以是内网发起，也可以是外网发起，应答亦是；</li><li>后缀匹配：由于前缀动态变化，而后缀固定<sup class="footnote-ref"><a href="#fn4" id="fnref4">[4]</a></sup>，所以匹配内网设备时使用后缀地址进行匹配；</li></ul><p>假设运营商分配的 PD 前缀为 /60（aaaa:bbbb:cccc:ddd0::/60），即可划分 16 个 /64 子网（aaaa:bbbb:cccc:ddd0::/64 ~ aaaa:bbbb:cccc:dddf::/64），无状态下最小子网前缀要求便是 /64。</p><h3 id="IPV6-禁入">IPV6 禁入</h3><p>全局 IPV6 禁入<sup class="footnote-ref"><a href="#fn5" id="fnref5">[5]</a></sup>：</p><table><thead><tr><th>协议栈</th><th>协议</th><th>动作</th><th>方向</th><th>连接方向匹配</th><th>进接口</th><th>出接口</th></tr></thead><tbody><tr><td>IPV6</td><td>任意</td><td>阻断</td><td>转发</td><td>原始方向</td><td>wan</td><td>lan</td></tr></tbody></table><p>效果：阻断了外网对内网的 IPV6 访问。</p><h3 id="隐私地址禁出">隐私地址禁出</h3><table><thead><tr><th>协议栈</th><th>协议</th><th>动作</th><th>方向</th><th>连接方向匹配</th><th>源地址</th><th>进接口</th><th>出接口</th></tr></thead><tbody><tr><td>IPV6</td><td>任意</td><td>阻断</td><td>转发</td><td>原始方向</td><td>::ff:feff:0/::ff:ff00:0</td><td>lan</td><td>wan</td></tr></tbody></table><p>禁止通过 EUI-64 生成的无状态 IPV6 地址发起的出流量，结合上条做到该类地址完全的禁入禁出。</p><p>EUI-64 根据设备 MAC 地址生成网络后缀，故存在 MAC 地址泄露风险<sup class="footnote-ref"><a href="#fn6" id="fnref6">[6]</a></sup>，算法流程如下：</p><ul><li>dc:50:e6:d0:3b:d0  =&gt; <mark>dc</mark>:50:e6:d0:3b:d0</li><li>dc =&gt; 110111<mark>0</mark>0 =&gt; 110111<mark>1</mark>0 =&gt; <mark>de</mark></li><li>de:50:e6:d0:3b:d0 =&gt; <mark>de:50:e6:</mark> <mark>d0:3b:d0</mark></li><li>de:50:e6: d0:3b:d0 =&gt; de:50:e6:<mark>ff:fe</mark>:d0:3b:d0</li><li>de:50:e6:ff:fe:d0:3b:d0 =&gt;  <mark>de50:e6ff:fed0:3bd0</mark></li><li>de50:e6ff:fed0:3bd0 =&gt; <mark>fe80</mark>::de50:e6ff:fed0:3bd0</li></ul><h3 id="允许外网访问内网指定端口">允许外网访问内网指定端口</h3><table><thead><tr><th>协议栈</th><th>协议</th><th>动作</th><th>方向</th><th>连接方向匹配</th><th>目的地址</th><th>目的端口</th><th>进接口</th><th>出接口</th></tr></thead><tbody><tr><td>IPV6</td><td>tcp</td><td>允许</td><td>转发</td><td>原始方向</td><td>::abcd/::ffff</td><td>8443</td><td>wan</td><td>lan</td></tr></tbody></table><p>关于目的地址：数据包实际从 WAN 到 LAN，走向目的地址，可以根据后缀匹配填写目的地址。</p><p>假设设备 IPV6 地址为：<code>240e:aaaa:bbbb:cccc:0000:0000:0000:0001</code>，简写为 <code>240e:aaaa:bbbb:cccc::1</code>，用后缀表示该地址变 <code>::1/::ffff</code>，无状态随机地址不可控。</p><h2 id="检测">检测</h2><p>可以在 <a href="https://port.tools/port-checker-ipv6/">IPv6 Port Checker</a> 处完成端口外网检测，按照实际情况，运营商已经把 80, 443, 8080 等端口阻断了。</p><hr class="footnotes-sep"><section class="footnotes"><ol class="footnotes-list"><li id="fn1" class="footnote-item"><p><strong>EUI-64</strong>：根据自身 MAC 地址生成的全球 IPV6 地址；<strong>随机生成</strong>：为了保护隐私生成的临时 IPV6 地址 <a href="#fnref1" class="footnote-backref">↩︎</a></p></li><li id="fn2" class="footnote-item"><p>安卓设备在获取 IPV6 地址时必须使用无状态配置，且子网前缀要求大于等于 64。 <a href="#fnref2" class="footnote-backref">↩︎</a></p></li><li id="fn3" class="footnote-item"><p>由于无状态需要通过设备 MAC 地址计算得出，所以相比有状态地址，无状态地址长的多。 <a href="#fnref3" class="footnote-backref">↩︎</a></p></li><li id="fn4" class="footnote-item"><p>有状态地址后缀一定固定，无状态地址后缀需选用永久地址中的接口标识部分。 <a href="#fnref4" class="footnote-backref">↩︎</a></p></li><li id="fn5" class="footnote-item"><p>TIP：未提及项保持默认值不做改动，下同。 <a href="#fnref5" class="footnote-backref">↩︎</a></p></li><li id="fn6" class="footnote-item"><p>有状态 IPV6 便于管理，但安卓设备不支持，在爱快中可以两种协议都开启。 <a href="#fnref6" class="footnote-backref">↩︎</a></p></li></ol></section>]]></content>
+    
+    
+    <summary type="html">这篇文章介绍了如何在爱快路由设备上配置 IPV6 网络防火墙，以保护内网设备的安全和访问权限。文章分析了设置防火墙的原因，介绍了 IPV6 地址的获取方式，以及如何通过 ACL 和后缀静态分配实现对指定设备的地址分配和端口开放。</summary>
+    
+    
+    
+    <category term="教程" scheme="https://inkss.cn/categories/%E6%95%99%E7%A8%8B/"/>
+    
+    
+    <category term="爱快" scheme="https://inkss.cn/tags/%E7%88%B1%E5%BF%AB/"/>
+    
+    <category term="IPV6" scheme="https://inkss.cn/tags/IPV6/"/>
+    
+    <category term="ACL" scheme="https://inkss.cn/tags/ACL/"/>
+    
+  </entry>
+  
+</feed>

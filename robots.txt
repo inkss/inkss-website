@@ -1,0 +1,3 @@
+# robots.txt https://inkss.cn
+User-agent: *
+Sitemap: http://inkss.cn/sitemap.xml
